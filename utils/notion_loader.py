@@ -8,11 +8,14 @@ from selenium.webdriver.common.action_chains import ActionChains
 from langchain_core.documents import Document
 from langchain_community.document_loaders.base import BaseLoader
 import time
+from utils.cache_utils import DocumentCache
 
 
 class NotionLoader(BaseLoader):
-    def __init__(self, url: str):
+    def __init__(self, url: str, cache_enabled: bool = True):
         self.url = url
+        self.cache_enabled = cache_enabled
+        self.cache = DocumentCache()
 
     def _expand_toggle_blocks(self, driver):
         """Expands all toggle blocks in the page."""
@@ -64,6 +67,19 @@ class NotionLoader(BaseLoader):
             return ""
 
     def load(self) -> List[Document]:
+        # Check cache first if enabled
+        if self.cache_enabled:
+            cached_doc = self.cache.get_document(self.url)
+            if cached_doc:
+                print(f"Loading from cache for URL: {self.url}")
+                return [
+                    Document(
+                        page_content=cached_doc["content"],
+                        metadata=cached_doc["metadata"],
+                    )
+                ]
+
+        # If not in cache, proceed with normal loading
         driver = None
         try:
             chrome_options = Options()
@@ -89,6 +105,10 @@ class NotionLoader(BaseLoader):
                 "source": self.url,
                 "title": driver.title,
             }
+
+            # Save to cache if enabled
+            if self.cache_enabled:
+                self.cache.save_document(self.url, text, metadata)
 
             return [Document(page_content=text, metadata=metadata)]
 

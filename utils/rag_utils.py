@@ -99,7 +99,7 @@ def load_url_to_db():
                     # Use custom loader for Notion URLs
                     if "notion.site" in url:
                         print("Using NotionLoader for URL:", url)
-                        loader = NotionLoader(url)
+                        loader = NotionLoader(url, cache_enabled=True)
                     else:
                         print("Using WebBaseLoader for URL:", url)
                         loader = WebBaseLoader(url)
@@ -108,7 +108,6 @@ def load_url_to_db():
                     if not data:
                         raise Exception("No content could be extracted from the URL")
 
-                    print(f"docs for url --> {url}: {data[0]}")
                     docs.extend(data)
                     st.session_state.rag_sources.append(url)
 
