@@ -59,7 +59,6 @@ if "openai_api_key" not in st.session_state:
 if "anthropic_api_key" not in st.session_state:
     st.session_state.anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
 
-# Now handle the default URL loading
 if not st.session_state.default_urls_loaded:
     with st.spinner("Loading default documentation..."):
         for url_data in DEFAULT_RAG_URLS:
