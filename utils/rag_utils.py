@@ -63,8 +63,9 @@ def load_doc_to_db():
                         else:
                             st.warning(f"Document type {doc_file.type} not supported.")
                             continue
-
-                        docs.extend(loader.load())
+                        data = loader.load()
+                        print(f"docs for url --> {doc_file.name}: {data[0]}")
+                        docs.extend(data)
                         st.session_state.rag_sources.append(doc_file.name)
 
                     except Exception as e:
@@ -95,8 +96,8 @@ def load_url_to_db():
             if len(st.session_state.rag_sources) < 10:
                 try:
                     loader = WebBaseLoader(url)
-                    docs = loader.load()
-                    print(f"docs for url --> {url}: {docs[0]}")
+                    data = loader.load()
+                    print(f"docs for url --> {url}: {data[0]}")
                     docs.extend(loader.load())
                     st.session_state.rag_sources.append(url)
 
