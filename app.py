@@ -58,9 +58,6 @@ if "openai_api_key" not in st.session_state:
 if "anthropic_api_key" not in st.session_state:
     st.session_state.anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
 
-if "az_openai_api_key" not in st.session_state:
-    st.session_state.az_openai_api_key = os.getenv("AZ_OPENAI_API_KEY")
-
 # Now handle the default URL loading
 if not st.session_state.default_urls_loaded:
     with st.spinner("Loading default documentation..."):
@@ -75,12 +72,10 @@ if not st.session_state.default_urls_loaded:
 with st.sidebar:
     openai_api_key = os.getenv("OPENAI_API_KEY")
     anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
-    az_openai_api_key = os.getenv("AZ_OPENAI_API_KEY")
 
     # Store API keys in session state
     st.session_state.openai_api_key = openai_api_key
     st.session_state.anthropic_api_key = anthropic_api_key
-    st.session_state.az_openai_api_key = az_openai_api_key
 
 
 # --- Main Content ---
@@ -180,19 +175,21 @@ else:
             streaming=True,
         )
 
+    # Display chat history
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+            if "content" in message:
+                st.markdown(message["content"])
 
+    # Handle new messages
     if prompt := st.chat_input("Your message"):
+        # Add user message to chat
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
 
+        # Generate and display assistant response
         with st.chat_message("assistant"):
-            message_placeholder = st.empty()
-            full_response = ""
-
             messages = [
                 HumanMessage(content=m["content"])
                 if m["role"] == "user"
@@ -201,6 +198,8 @@ else:
             ]
 
             if not st.session_state.use_rag:
-                st.write_stream(stream_llm_response(llm_stream, messages))
+                response = stream_llm_response(llm_stream, messages)
+                st.write_stream(response)
             else:
-                st.write_stream(stream_llm_rag_response(llm_stream, messages))
+                response = stream_llm_rag_response(llm_stream, messages)
+                st.write_stream(response)

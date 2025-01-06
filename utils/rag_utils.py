@@ -32,8 +32,9 @@ def stream_llm_response(llm_stream, messages):
 
     for chunk in llm_stream.stream(messages):
         response_message += chunk.content
-        yield chunk
+        yield chunk.content  # Changed to yield just the content
 
+    # Store the complete message after streaming
     st.session_state.messages.append({"role": "assistant", "content": response_message})
 
 
@@ -94,6 +95,8 @@ def load_url_to_db():
             if len(st.session_state.rag_sources) < 10:
                 try:
                     loader = WebBaseLoader(url)
+                    docs = loader.load()
+                    print(f"docs for url --> {url}: {docs[0]}")
                     docs.extend(loader.load())
                     st.session_state.rag_sources.append(url)
 
@@ -159,15 +162,20 @@ def _get_context_retriever_chain(vector_db, llm):
 
     print("===================== get context retriever chain  ================")
 
-    # def debug_and_retrieve(query):
-    #     docs = retriever.aget_relevant_documents(query)
-    #     print("\n=== Retrieved Documents ===")
-    #     for i, doc in enumerate(docs, 1):
-    #         print(f"\nDocument {i}:")
-    #         print(f"Content: {doc.page_content[:200]}...")
-    #         print(f"Source: {doc.metadata.get('source', 'Unknown')}")
-    #         print("-" * 50)
-    #     return docs
+    # Function to print retrieved documents
+    def debug_and_retrieve(query):
+        docs_with_scores = retriever.get_relevant_documents(query)
+        print("\n=== Retrieved Documents for Query ===")
+        print(f"Query: {query}")
+        print(f"Number of Documents Retrieved: {len(docs_with_scores)}")
+        for i, (doc) in enumerate(docs_with_scores, 1):
+            print(f"\nDocument {i}:")
+            print(f"Rank: {i}")
+            print(f"Content: {doc.page_content}")  # Print entire content
+            print(f"Metadata: {doc.metadata}")
+            print(f"Source: {doc.metadata.get('source', 'Unknown')}")
+            print("-" * 50)
+        return [doc for doc in docs_with_scores]
 
     prompt = ChatPromptTemplate.from_messages(
         [
@@ -180,24 +188,42 @@ def _get_context_retriever_chain(vector_db, llm):
     print(f"prompt for retriever: {prompt}")
 
     print(f"retriever: {retriever}")
-    # Create the retriever chain with the debug wrapper
+
+    # Create the retriever chain
     retriever_chain = create_history_aware_retriever(
         llm,
         retriever,
         prompt,
     )
 
+    # Call the debug function to log the retrieved documents
+    st.session_state.retrieved_docs = debug_and_retrieve
+
     return retriever_chain
 
 
-def get_conversational_rag_chain(llm):
+def get_conversational_rag_chain(llm, query):
     retriever_chain = _get_context_retriever_chain(st.session_state.vector_db, llm)
     print("\n=== Retriever Chain Output ===")
     print(f"Type: {type(retriever_chain)}")
     print(f"Content: {retriever_chain}")
     print("================================\n")
 
-    prompt = prompt = ChatPromptTemplate.from_messages(
+    print(f"last query ----> {query}")
+
+    # Call the debug function to log the retrieved documents
+    retrieved_docs = st.session_state.retrieved_docs(query)
+
+    # Log the retrieved documents
+    print("\n=== Retrieved Documents ===")
+    # for i, doc in enumerate(retrieved_docs, 1):
+    #     print(f"\nDocument {i}:")
+    #     print(f"Content: {doc.page_content[:200]}...")  # Print first 200 characters
+    #     print(f"Source: {doc.metadata.get('source', 'Unknown')}")
+    #     print("-" * 50)
+
+    print(f"retrieved_docs: -------------------> {retrieved_docs}")
+    prompt = ChatPromptTemplate.from_messages(
         [
             (
                 "system",
@@ -227,10 +253,10 @@ def stream_llm_rag_response(llm_stream, messages):
     print("\n=== RAG Request Started ===")
     print(f"User Query: {messages[-1].content}")
 
-    conversation_rag_chain = get_conversational_rag_chain(llm_stream)
+    last_query = messages[-1].content
+    conversation_rag_chain = get_conversational_rag_chain(llm_stream, last_query)
     response_message = "*(RAG Response)*\n"
 
-    # Add timing information
     start_time = time()
 
     for chunk in conversation_rag_chain.pick("answer").stream(
@@ -238,6 +264,9 @@ def stream_llm_rag_response(llm_stream, messages):
     ):
         response_message += chunk
         yield chunk
+
+    # Store the complete message after streaming
+    st.session_state.messages.append({"role": "assistant", "content": response_message})
 
     print(f"\nTotal RAG processing time: {time() - start_time:.2f} seconds")
     print("=== RAG Request Completed ===\n")
