@@ -27,8 +27,8 @@ from utils.rag_utils import (
 dotenv.load_dotenv()
 
 st.set_page_config(
-    page_title="RAG LLM app?",
-    page_icon="📚",
+    page_title="Crustdata API Chatbot",
+    page_icon="�",
     layout="centered",
     initial_sidebar_state="expanded",
 )

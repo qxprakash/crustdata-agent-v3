@@ -119,34 +119,6 @@ Example:
 Same schema as the parent 
 Crustdata Discovery And Enrichment API - filters parameter 
 Curl 
-curl --request POST \
-  --url https://api.crustdata.com/data_lab/job_listings/Table/ \
-  --header 'Accept: application/json, text/plain, */*' \
-  --header 'Accept-Language: en-US,en;q=0.9' \
-  --header 'Authorization: Token $token' \
-  --header 'Content-Type: application/json' \
-  --header 'Origin: https://crustdata.com' \
-  --header 'User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36' \
-  --data '{
-    "tickers": [],
-    "dataset": {
-      "name": "job_listings",
-      "id": "joblisting"
-    },
-    "filters": {
-      "op": "and",
-      "conditions": [
-        {"column": "company_id", "type": "in", "value": [7576, 680992, 673947, 631280, 636304, 631811]},
-        {"column": "date_updated", "type": ">", "value": "2024-02-01"}
-      ]
-    },
-    "groups": [],
-    "aggregations": [],
-    "functions": [],
-    "offset": 0,
-    "limit": 100,
-    "sorts": []
-  }'
 Python
 import requests
 import json
