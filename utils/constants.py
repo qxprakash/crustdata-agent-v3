@@ -6,6 +6,12 @@ MODELS = [
 
 
 DEFAULT_RAG_URLS = [
-    "https://crustdata.notion.site/Crustdata-Discovery-And-Enrichment-API-c66d5236e8ea40df8af114f6d447ab48",
-    "https://crustdata.notion.site/Crustdata-Dataset-API-Detailed-Examples-b83bd0f1ec09452bb0c2cac811bba88c#ff964b2e316c49de8770e0bf2cf81f8a",
+    {
+        "url": "https://crustdata.notion.site/Crustdata-Discovery-And-Enrichment-API-c66d5236e8ea40df8af114f6d447ab48",
+        "fallback_file": "docs/discovery_api.md",
+    },
+    {
+        "url": "https://crustdata.notion.site/Crustdata-Dataset-API-Detailed-Examples-b83bd0f1ec09452bb0c2cac811bba88c",
+        "fallback_file": "docs/dataset_api.md",
+    },
 ]

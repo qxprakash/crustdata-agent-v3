@@ -19,6 +19,7 @@ from langchain.chains import create_history_aware_retriever, create_retrieval_ch
 from langchain.chains.combine_documents import create_stuff_documents_chain
 
 from utils.prompts import RAG_PROMPT
+from utils.notion_loader import NotionLoader
 
 dotenv.load_dotenv()
 
@@ -95,21 +96,31 @@ def load_url_to_db():
         if url not in st.session_state.rag_sources:
             if len(st.session_state.rag_sources) < 10:
                 try:
-                    loader = WebBaseLoader(url)
+                    # Use custom loader for Notion URLs
+                    if "notion.site" in url:
+                        print("Using NotionLoader for URL:", url)
+                        loader = NotionLoader(url)
+                    else:
+                        print("Using WebBaseLoader for URL:", url)
+                        loader = WebBaseLoader(url)
+
                     data = loader.load()
+                    if not data:
+                        raise Exception("No content could be extracted from the URL")
+
                     print(f"docs for url --> {url}: {data[0]}")
-                    docs.extend(loader.load())
+                    docs.extend(data)
                     st.session_state.rag_sources.append(url)
 
                 except Exception as e:
                     st.error(f"Error loading document from {url}: {e}")
+                    return
 
                 if docs:
                     _split_and_load_docs(docs)
                     st.toast(
                         f"Document from URL *{url}* loaded successfully.", icon="✅"
                     )
-
             else:
                 st.error("Maximum number of documents reached (10).")
 

@@ -15,8 +15,9 @@ if os.name == "posix":
 from langchain_openai import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
 from langchain.schema import HumanMessage, AIMessage
-
+from langchain_core.documents import Document
 from utils.rag_utils import (
+    _split_and_load_docs,
     load_doc_to_db,
     load_url_to_db,
     stream_llm_response,
@@ -61,9 +62,27 @@ if "anthropic_api_key" not in st.session_state:
 # Now handle the default URL loading
 if not st.session_state.default_urls_loaded:
     with st.spinner("Loading default documentation..."):
-        for url in DEFAULT_RAG_URLS:
-            st.session_state.rag_url = url
+        for url_data in DEFAULT_RAG_URLS:
+            st.session_state.rag_url = url_data["url"]
             load_url_to_db()
+            if (
+                url_data["url"] not in st.session_state.rag_sources
+                and "fallback_file" in url_data
+            ):
+                # If URL loading failed, try loading from local fallback file
+                try:
+                    with open(url_data["fallback_file"], "r") as f:
+                        docs = [
+                            Document(
+                                page_content=f.read(),
+                                metadata={"source": url_data["url"]},
+                            )
+                        ]
+                        _split_and_load_docs(docs)
+                        st.session_state.rag_sources.append(url_data["url"])
+                except Exception as e:
+                    st.error(f"Failed to load documentation: {e}")
+
         st.session_state.default_urls_loaded = True
     st.session_state.rag_url = ""
 
