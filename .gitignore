@@ -6,4 +6,4 @@ source_files/
 .cache/
 !data/content/
 !data/metadata/
-new-test/
+myenv/
